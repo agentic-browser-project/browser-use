@@ -25,6 +25,7 @@ from browser_use.llm.openai.chat import ChatOpenAI
 from simulator.config import COMBINED_NUDGE, RUNS_DIR, TSA_API_KEY, TSA_BASE_URL, TSA_MODEL, USE_TSA, RunConfig
 from simulator.core.batching import BatchCoordinator, BatchLLMProxy
 from simulator.core.recorder import RecordingProxy, TrajectoryRecorder
+from simulator.core.judge import build_judge_llm, judge_semaphore, judge_task_dir
 from simulator.tasks import WebVoyagerTask, load_tasks
 
 T = TypeVar('T')
@@ -109,6 +110,13 @@ async def execute_task(
 		status, success = 'completed', history.is_successful()
 	except asyncio.TimeoutError:
 		status, success = 'timeout', None
+	except asyncio.CancelledError:
+		# A nested watchdog/browser-start timeout inside agent.run raises CancelledError,
+		# which is a BaseException and would otherwise escape `except Exception` below and
+		# abort the ENTIRE capture run (killing all remaining tasks). Our own task_timeout
+		# surfaces as TimeoutError (handled above), so a CancelledError reaching here is an
+		# internal timeout for THIS task only — contain it and record the task as an error.
+		status, success, err = 'error', False, 'cancelled (nested timeout)'
 	except Exception as e:  # noqa: BLE001
 		status, success, err = 'error', False, str(e)[:300]
 	finally:
@@ -146,7 +154,7 @@ def _build_llm(cfg: RunConfig):
 			base_url=TSA_BASE_URL,
 			api_key=TSA_API_KEY,
 			temperature=0.2,
-			max_completion_tokens=1024,  # bound decode: agent output is ~300-600 tok; 1024 keeps decode ~150s (<240s llm-timeout) on the GB10 even with default thinking
+			max_completion_tokens=int(os.environ.get('SIM_MAX_TOKENS', '1024')),  # bound decode; env-overridable (default 1024). agent output is ~300-600 tok
 			add_schema_to_system_prompt=True,
 			dont_force_structured_output=False,  # send response_format=json_schema -> server xgrammar grammar-constrained decoding (valid JSON even under aggressive sparsity)
 		)
@@ -218,6 +226,11 @@ async def run_capture(cfg: RunConfig, out_dir: Path | None = None) -> Path:
 		return out_dir
 	coord = _coordinator(cfg)
 	profile_root = _profile_root()
+	# Overlapped evaluation: fire the browser-use judge (Gemini judge_llm) the moment a
+	# task finishes, detached, so it runs concurrently with the next task's agent.
+	judge_llm = build_judge_llm()
+	judge_sema = judge_semaphore()
+	judge_tasks: list[asyncio.Task] = []
 
 	async def handler(task, slot) -> TaskOutcome:
 		recorder = TrajectoryRecorder(out_dir / task.folder_name, task)
@@ -235,9 +248,16 @@ async def run_capture(cfg: RunConfig, out_dir: Path | None = None) -> Path:
 		outcome.steps = recorder.step
 		outcome.extra['dir'] = str(out_dir / task.folder_name)
 		print(f'  [slot {slot}] ■ {outcome.status} steps={recorder.step} -> {task.folder_name}', flush=True)
+		# Detached, overlapped evaluation (does NOT block this worker from the next task).
+		if judge_llm is not None and outcome.status in ('completed', 'timeout'):
+			judge_tasks.append(asyncio.create_task(
+				judge_task_dir(judge_llm, task, out_dir / task.folder_name, judge_sema)))
 		return outcome
 
 	outcomes = await run_pool(todo, cfg.batch_size, handler)
+	if judge_tasks:
+		print(f'  ⚖️  draining {len(judge_tasks)} overlapped evaluations...', flush=True)
+		await asyncio.gather(*judge_tasks, return_exceptions=True)
 	shutil.rmtree(profile_root, ignore_errors=True)  # remove the temp profile root (per-task slot dirs already cleaned)
 	summary = [
 		{
