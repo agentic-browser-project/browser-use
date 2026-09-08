@@ -169,7 +169,7 @@ def _coordinator(cfg: RunConfig) -> BatchCoordinator:
 
 async def run_batch(cfg: RunConfig) -> list[TaskOutcome]:
 	"""Run tasks in parallel with no recording."""
-	tasks = load_tasks(cfg.task_num, cfg.shuffle, cfg.seed, cfg.source)
+	tasks = load_tasks(cfg.task_num, cfg.shuffle, cfg.seed, cfg.source, getattr(cfg, 'task_ids_file', None))
 	print(f'Running {len(tasks)} tasks | batch_size={cfg.batch_size} | source={cfg.source} | model={TSA_MODEL if USE_TSA else cfg.model}')
 	coord = _coordinator(cfg)
 	profile_root = _profile_root()
@@ -191,7 +191,7 @@ async def run_capture(cfg: RunConfig, out_dir: Path | None = None) -> Path:
 	"""Run tasks in parallel and record each one's full trajectory; returns the run dir."""
 	out_dir = out_dir or (RUNS_DIR / f'run_{int(time.time())}')
 	out_dir.mkdir(parents=True, exist_ok=True)
-	tasks = load_tasks(cfg.task_num, cfg.shuffle, cfg.seed, cfg.source)
+	tasks = load_tasks(cfg.task_num, cfg.shuffle, cfg.seed, cfg.source, getattr(cfg, 'task_ids_file', None))
 
 	# Resume support: skip tasks already captured. A folder counts as captured only if it has a
 	# final 'completed'/'timeout' status AND at least one step recorded a real model output — a

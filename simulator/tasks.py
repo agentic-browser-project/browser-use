@@ -94,8 +94,13 @@ def load_gaia_tasks(path: Path = GAIA_JSONL) -> list[WebVoyagerTask]:
 	return out
 
 
-def load_tasks(n: int, shuffle: bool = False, seed: int = 0, source: str = 'both') -> list[WebVoyagerTask]:
-	"""Load up to ``n`` tasks from the chosen source(s) (optionally shuffled first)."""
+def load_tasks(n: int, shuffle: bool = False, seed: int = 0, source: str = 'both',
+               task_ids_file: str | None = None) -> list[WebVoyagerTask]:
+	"""Load up to ``n`` tasks from the chosen source(s) (optionally shuffled first).
+
+	With ``task_ids_file`` (one task id per line, e.g. "Allrecipes--0"), the
+	pool is restricted to EXACTLY those ids, in file order — pinning a run to
+	a fixed subset regardless of pool ordering or shuffle seed."""
 	tasks: list[WebVoyagerTask] = []
 	if source in ('webvoyager', 'both'):
 		tasks += load_webvoyager_tasks()
@@ -103,6 +108,14 @@ def load_tasks(n: int, shuffle: bool = False, seed: int = 0, source: str = 'both
 		tasks += load_gaia_tasks()
 	if not tasks:
 		raise SystemExit(f'no tasks loaded for source={source!r}')
+	if task_ids_file:
+		want = [l.strip() for l in open(task_ids_file) if l.strip()]
+		by_id = {t.id: t for t in tasks}
+		missing = [w for w in want if w not in by_id]
+		if missing:
+			raise SystemExit(f'task_ids_file: {len(missing)} ids not in pool, e.g. {missing[:3]}')
+		tasks = [by_id[w] for w in want]
+		return tasks[:n]
 	if shuffle:
 		random.Random(seed).shuffle(tasks)
 	return tasks[:n]

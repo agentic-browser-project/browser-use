@@ -24,7 +24,9 @@ def _add_run_args(p: argparse.ArgumentParser) -> None:
 	p.add_argument('--task-timeout', type=float, default=d.task_timeout, help='Per-task wall-clock timeout (seconds).')
 	p.add_argument('--llm-timeout', type=float, default=d.llm_timeout, help='Per-call LLM timeout (seconds).')
 	p.add_argument('--max-wait', type=float, default=d.max_wait, help='Max seconds the coordinator waits to fill a batch.')
+	p.add_argument('--no-vision', action='store_true', help='Disable sending screenshots to the model (text-only mode).')
 	p.add_argument('--shuffle', action='store_true')
+	p.add_argument('--task-ids-file', default=d.task_ids_file, help='Pin the run to exactly these task ids (one per line, file order).')
 	p.add_argument('--seed', type=int, default=d.seed)
 
 
@@ -38,8 +40,10 @@ def _cfg(a: argparse.Namespace) -> RunConfig:
 		task_timeout=a.task_timeout,
 		llm_timeout=a.llm_timeout,
 		max_wait=a.max_wait,
+		use_vision=not a.no_vision,
 		shuffle=a.shuffle,
 		seed=a.seed,
+		task_ids_file=a.task_ids_file,
 	)
 
 

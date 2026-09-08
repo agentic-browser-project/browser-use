@@ -84,3 +84,4 @@ class RunConfig:
 	use_vision: bool = True  # send the screenshot to the model each step (multimodal)
 	shuffle: bool = False
 	seed: int = 0
+	task_ids_file: str | None = None
