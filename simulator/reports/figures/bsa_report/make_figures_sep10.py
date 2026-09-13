@@ -90,14 +90,14 @@ def fig20():
 # fig21: where the growth of the width term comes from (RoPE bands)
 def fig21():
     fig, ax = plt.subplots(figsize=(8.5, 3.4))
-    bands = ["0–7\n(θ≥0.22)", "8–15", "16–23", "24–31", "32–39", "40–47", "48–55", "56–63\n(θ≤5.6e-6)"]
+    bands = ["0–7\n(θ≥0.19)", "8–15", "16–23", "24–31", "32–39", "40–47", "48–55", "56–63\n(θ≤1.4e-6)"]
     ex = [0.199, 0.328, 0.289, 0.214, 0.216, 0.223, 0.244, 0.260]
     cols = [C_GRAY, C_BUG, C_BUG, C_TREE, C_TREE, C_TREE, C_TREE, C_TREE]
     ax.bar(range(8), ex, color=cols, width=0.65)
     ax.axhline(0.248, color=C_DENSE, ls="--", lw=1); ax.text(7.45, 0.252, "all dims: 0.248", ha="right", fontsize=8.5)
     ax.axhline(0.170, color=C_GRAY, ls=":", lw=1); ax.text(7.45, 0.174, "iid Gaussian keys (extreme value): 0.17", ha="right", fontsize=8.5, color="#555555")
     ax.set_xticks(range(8)); ax.set_xticklabels(bands, fontsize=8.5); ax.set_ylim(0, 0.37)
-    ax.set_xlabel("RoPE dimension pair j  (rotation angle per token θ_j = 10⁶^(−2j/128))"); ax.set_ylabel("growth exponent of key range, L = 8 → 256")
+    ax.set_xlabel("RoPE dimension pair j  (rotation angle per token θ_j = (5·10⁶)^(−2j/128))"); ax.set_ylabel("growth exponent of key range, L = 8 → 256")
     ax.set_title("Envelope width growth by RoPE frequency band (Qwen3-VL-30B-A3B keys, 12 prompts × 4 layers)")
     ax.annotate("angle crosses ~1 rad\nwithin 8–256 tokens", xy=(1.5, 0.33), xytext=(3.2, 0.33), fontsize=8.5, color=C_BUG, va="center",
                 arrowprops=dict(arrowstyle="->", color=C_BUG))
