@@ -219,6 +219,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		_url_shortening_limit: int = 25,
 		uncapped_wait: bool = False,
 		include_time: bool = False,
+		include_host_date: bool = True,
 		site_time_callback: Callable[[], str | None | Awaitable[str | None]] | None = None,
 		**kwargs,
 	):
@@ -332,6 +333,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 				uncapped_wait=uncapped_wait,
 			)
 		self._include_time = include_time
+		self._include_host_date = include_host_date
 		self._site_time_callback = site_time_callback
 		self._task_start_time: float | None = None
 
@@ -2599,6 +2601,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 					step_number=current_step,
 					max_steps=max_steps,
 					include_time=self._include_time,
+					include_host_date=self._include_host_date,
 					task_start_time=self._task_start_time,
 					last_step_duration=getattr(self, '_last_step_duration', None),
 					site_current_time=_site_time,
