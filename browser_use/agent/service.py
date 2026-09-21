@@ -128,6 +128,18 @@ Context = TypeVar('Context')
 AgentHookFunc = Callable[['Agent'], Awaitable[None]]
 
 
+async def resolve_site_time_callback(
+	callback: Callable[[], str | None | Awaitable[str | None]] | None,
+) -> str | None:
+	"""Read one authoritative observation; failures invalidate this step."""
+	if callback is None:
+		return None
+	value = callback()
+	if inspect.isawaitable(value):
+		value = await value
+	return value
+
+
 class Agent(Generic[Context, AgentStructuredOutput]):
 	@time_execution_sync('--init')
 	def __init__(
@@ -207,7 +219,8 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		_url_shortening_limit: int = 25,
 		uncapped_wait: bool = False,
 		include_time: bool = False,
-		site_time_callback: Callable[[], str | None] | None = None,
+		include_host_date: bool = True,
+		site_time_callback: Callable[[], str | None | Awaitable[str | None]] | None = None,
 		**kwargs,
 	):
 		# Validate llm_screenshot_size
@@ -314,8 +327,13 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		else:
 			# Exclude screenshot tool when use_vision is not auto
 			exclude_actions = ['screenshot'] if use_vision != 'auto' else []
-			self.tools = Tools(exclude_actions=exclude_actions, display_files_in_done_text=display_files_in_done_text, uncapped_wait=uncapped_wait)
+			self.tools = Tools(
+				exclude_actions=exclude_actions,
+				display_files_in_done_text=display_files_in_done_text,
+				uncapped_wait=uncapped_wait,
+			)
 		self._include_time = include_time
+		self._include_host_date = include_host_date
 		self._site_time_callback = site_time_callback
 		self._task_start_time: float | None = None
 
@@ -2578,16 +2596,12 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 					break
 
 				_step_start = time.time()
-				_site_time = None
-				if self._site_time_callback:
-					try:
-						_site_time = self._site_time_callback()
-					except Exception:
-						pass
+				_site_time = await resolve_site_time_callback(self._site_time_callback)
 				step_info = AgentStepInfo(
 					step_number=current_step,
 					max_steps=max_steps,
 					include_time=self._include_time,
+					include_host_date=self._include_host_date,
 					task_start_time=self._task_start_time,
 					last_step_duration=getattr(self, '_last_step_duration', None),
 					site_current_time=_site_time,

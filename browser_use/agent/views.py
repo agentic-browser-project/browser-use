@@ -279,6 +279,7 @@ class AgentStepInfo:
 	step_number: int
 	max_steps: int
 	include_time: bool = False
+	include_host_date: bool = True
 	task_start_time: float | None = None  # time.time() when the task started
 	last_step_duration: float | None = None  # seconds the previous step took
 	site_current_time: str | None = None  # current simulated time from the website

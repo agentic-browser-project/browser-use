@@ -62,6 +62,7 @@ class ChatOpenAI(BaseChatModel):
 	http_client: httpx.AsyncClient | None = None
 	_strict_response_validation: bool = False
 	max_completion_tokens: int | None = 4096
+	openrouter_provider: dict[str, Any] | None = None
 	reasoning_models: list[ChatModel | str] | None = field(
 		default_factory=lambda: [
 			'o4-mini',
@@ -167,6 +168,8 @@ class ChatOpenAI(BaseChatModel):
 
 		try:
 			model_params: dict[str, Any] = {}
+			if self.openrouter_provider is not None:
+				model_params['extra_body'] = {'provider': self.openrouter_provider}
 
 			if self.temperature is not None:
 				model_params['temperature'] = self.temperature
