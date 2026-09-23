@@ -369,6 +369,9 @@ class StepMetadata(BaseModel):
 	step_end_time: float
 	step_number: int
 	step_interval: float | None = None
+	# Wall-clock seconds per step phase (observation, prepare_context, llm,
+	# action, post) — populated by Agent.step() for latency decomposition.
+	phase_timings: dict[str, float] | None = None
 
 	@property
 	def duration_seconds(self) -> float:

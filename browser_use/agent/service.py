@@ -1026,6 +1026,8 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		# Initialize timing first, before any exceptions can occur
 
 		self.step_start_time = time.time()
+		# Per-phase wall-clock durations for this step (latency decomposition)
+		self._phase_timings: dict[str, float] = {}
 
 		browser_state_summary = None
 
@@ -1050,14 +1052,22 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 					self.logger.warning(f'Phase 0 captcha wait failed (non-fatal): {e}')
 
 			# Phase 1: Prepare context and timing
+			_phase_t = time.time()
 			browser_state_summary = await self._prepare_context(step_info)
+			self._phase_timings['prepare_context'] = time.time() - _phase_t
 
 			# Phase 2: Get model output and execute actions
+			_phase_t = time.time()
 			await self._get_next_action(browser_state_summary)
+			self._phase_timings['llm'] = time.time() - _phase_t
+			_phase_t = time.time()
 			await self._execute_actions()
+			self._phase_timings['action'] = time.time() - _phase_t
 
 			# Phase 3: Post-processing
+			_phase_t = time.time()
 			await self._post_process()
+			self._phase_timings['post'] = time.time() - _phase_t
 
 		except Exception as e:
 			# Handle ALL exceptions in one place
@@ -1075,10 +1085,13 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		self.logger.debug(f'🌐 Step {self.state.n_steps}: Getting browser state...')
 		# Always take screenshots for all steps
 		self.logger.debug('📸 Requesting browser state with include_screenshot=True')
+		_obs_t = time.time()
 		browser_state_summary = await self.browser_session.get_browser_state_summary(
 			include_screenshot=True,  # always capture even if use_vision=False so that cloud sync is useful (it's fast now anyway)
 			include_recent_events=self.include_recent_events,
 		)
+		if hasattr(self, '_phase_timings'):
+			self._phase_timings['observation'] = time.time() - _obs_t
 		if browser_state_summary.screenshot:
 			self.logger.debug(f'📸 Got browser state WITH screenshot, length: {len(browser_state_summary.screenshot)}')
 		else:
@@ -1355,6 +1368,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 				step_start_time=self.step_start_time,
 				step_end_time=step_end_time,
 				step_interval=step_interval,
+				phase_timings=getattr(self, '_phase_timings', None) or None,
 			)
 
 			# Use _make_history_item like main branch
