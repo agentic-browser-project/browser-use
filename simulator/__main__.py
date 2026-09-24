@@ -18,7 +18,12 @@ def _add_run_args(p: argparse.ArgumentParser) -> None:
 	d = RunConfig()
 	p.add_argument('--task-num', type=int, default=d.task_num, help='Total number of tasks to complete.')
 	p.add_argument('--batch-size', type=int, default=d.batch_size, help='Concurrent tasks / windows / LLM batch size.')
-	p.add_argument('--source', choices=['both', 'webvoyager', 'gaia'], default=d.source, help='Which task set(s) to draw from.')
+	p.add_argument(
+		'--source',
+		choices=['both', 'webvoyager', 'gaia', 'online_mind2web', 'all'],
+		default=d.source,
+		help="Which task set(s) to draw from ('both' = webvoyager+gaia; 'all' adds online_mind2web).",
+	)
 	p.add_argument('--model', default=d.model, help='DashScope model.')
 	p.add_argument('--max-steps', type=int, default=d.max_steps, help='Max agent steps per task.')
 	p.add_argument('--task-timeout', type=float, default=d.task_timeout, help='Per-task wall-clock timeout (seconds).')
@@ -26,7 +31,9 @@ def _add_run_args(p: argparse.ArgumentParser) -> None:
 	p.add_argument('--max-wait', type=float, default=d.max_wait, help='Max seconds the coordinator waits to fill a batch.')
 	p.add_argument('--no-vision', action='store_true', help='Disable sending screenshots to the model (text-only mode).')
 	p.add_argument('--shuffle', action='store_true')
-	p.add_argument('--task-ids-file', default=d.task_ids_file, help='Pin the run to exactly these task ids (one per line, file order).')
+	p.add_argument(
+		'--task-ids-file', default=d.task_ids_file, help='Pin the run to exactly these task ids (one per line, file order).'
+	)
 	p.add_argument('--seed', type=int, default=d.seed)
 
 
@@ -61,9 +68,11 @@ def main() -> None:
 	pe.add_argument('path', help='A task folder (with step_*) or a run folder of task folders.')
 	pe.add_argument(
 		'--mode',
-		choices=['success', 'replay'],
+		choices=['success', 'webjudge', 'replay'],
 		default='success',
-		help="'success' = WebVoyager task-success judge (did the task complete?); 'replay' = action fidelity.",
+		help="'success' = WebVoyager task-success judge (did the task complete?); "
+		"'webjudge' = the official Online-Mind2Web WebJudge protocol (no reference answers); "
+		"'replay' = action fidelity.",
 	)
 	pe.add_argument(
 		'--model',
@@ -71,6 +80,10 @@ def main() -> None:
 		help='Judge model for success (default qwen-vl-max) / predict model for replay (default qwen-max).',
 	)
 	pe.add_argument('--k', type=int, default=2, help='Number of final screenshots given to the success judge.')
+	pe.add_argument(
+		'--score-threshold', type=int, default=3,
+		help='webjudge: min per-screenshot relevance score (1-5) to forward it to the final judgment.',
+	)
 
 	pl = sub.add_parser('latency', help='Replay-mode latency benchmark: batched replay of recorded contexts, no browser.')
 	pl.add_argument('path', help='A run folder of captured task trajectories (with <task>/step_*).')
@@ -83,8 +96,17 @@ def main() -> None:
 		help="Start each task at step 0 ('zero') or a random step ('random'), then replay to its end.",
 	)
 	pl.add_argument('--seed', type=int, default=0, help='Sampling / random-start seed.')
+	pl.add_argument('--task-ids-file', default=None, help='Exact task ids to replay, one per line, in file order.')
+	pl.add_argument('--steps-per-task', type=int, default=0, help='Replay at most N recorded steps per task (0 = all).')
 	pl.add_argument('--max-tokens', type=int, default=1024, help='Max decode tokens per step.')
 	pl.add_argument('--temperature', type=float, default=0.0)
+	pl.add_argument('--stream', action='store_true', help='Stream the response to measure TTFT and TPOT separately.')
+	pl.add_argument(
+		'--force-tokens',
+		type=int,
+		default=None,
+		help='Decode exactly N tokens (ignore_eos + min_tokens) and drop the JSON schema, so every config does identical decode work.',
+	)
 	pl.add_argument('--top-k-label', default=None, help='Free-text label for the server top-k setting (recorded in output).')
 	pl.add_argument('--out', default=None, help='Output JSON path (default: under the run folder).')
 
@@ -100,7 +122,7 @@ def main() -> None:
 	elif a.cmd == 'eval':
 		from simulator.eval import evaluate_path
 
-		asyncio.run(evaluate_path(Path(a.path), mode=a.mode, model=a.model, k=a.k))
+		asyncio.run(evaluate_path(Path(a.path), mode=a.mode, model=a.model, k=a.k, score_threshold=a.score_threshold))
 	elif a.cmd == 'latency':
 		from simulator.eval.latency import measure_latency
 
@@ -115,6 +137,10 @@ def main() -> None:
 				temperature=a.temperature,
 				top_k_label=a.top_k_label,
 				out=Path(a.out) if a.out else None,
+				stream=a.stream,
+				force_tokens=a.force_tokens,
+				task_ids_file=Path(a.task_ids_file) if a.task_ids_file else None,
+				steps_per_task=a.steps_per_task,
 			)
 		)
 

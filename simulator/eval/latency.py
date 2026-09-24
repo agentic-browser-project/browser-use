@@ -25,6 +25,7 @@ token counts, throughput, and context lengths.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import random
 import time
@@ -64,7 +65,12 @@ class TaskReplay:
 		return self.cur_idx >= len(self.step_files)
 
 
-def _load_task(td: Path, start_mode: str, rng: random.Random) -> TaskReplay | None:
+def _load_task(
+	td: Path,
+	start_mode: str,
+	rng: random.Random,
+	steps_per_task: int = 0,
+) -> TaskReplay | None:
 	"""Build a TaskReplay from a task dir, or None if it has no usable steps/schema."""
 	step_files = sorted(p / 'messages.json' for p in sorted(td.glob('step_*')) if (p / 'messages.json').exists())
 	if not step_files:
@@ -74,7 +80,7 @@ def _load_task(td: Path, start_mode: str, rng: random.Random) -> TaskReplay | No
 		return None
 	try:
 		schema_obj = json.loads(sp.read_text())
-	except Exception:  # noqa: BLE001
+	except Exception:
 		return None
 	if 'schema' not in schema_obj:  # tool_schema.json stored an {'error': ...}
 		return None
@@ -83,11 +89,23 @@ def _load_task(td: Path, start_mode: str, rng: random.Random) -> TaskReplay | No
 		'json_schema': {'name': schema_obj.get('name', 'AgentOutput'), 'strict': True, 'schema': schema_obj['schema']},
 	}
 	start = rng.randrange(len(step_files)) if start_mode == 'random' else 0
-	return TaskReplay(name=td.name, dir=td, step_files=step_files, response_format=rf, start_idx=start, cur_idx=start)
+	source_start = start
+	if steps_per_task > 0:
+		step_files = step_files[start : start + steps_per_task]
+	else:
+		step_files = step_files[start:]
+	return TaskReplay(name=td.name, dir=td, step_files=step_files, response_format=rf, start_idx=source_start, cur_idx=0)
 
 
 async def _one_request(
-	judge: AsyncOpenAI, model: str, msg_path: Path, response_format: dict, max_tokens: int, temperature: float
+	judge: AsyncOpenAI,
+	model: str,
+	msg_path: Path,
+	response_format: dict,
+	max_tokens: int,
+	temperature: float,
+	stream: bool = False,
+	force_tokens: int | None = None,
 ) -> dict:
 	"""Replay a single step: send the recorded context, time the call, return latency + usage."""
 	messages_bm = _MSGS.validate_python(json.loads(msg_path.read_text())['messages'])
@@ -106,20 +124,58 @@ async def _one_request(
 					text_chars += len(part.get('text', '') or '')
 				elif part.get('type') == 'image_url':
 					n_images += 1
+	# Fixed-length decode mode: drop the JSON grammar (after the object closes only
+	# EOS is a legal token, so ignore_eos would have nothing valid to emit) and force
+	# exactly force_tokens decode steps, so every config does identical decode work.
+	kwargs: dict = {
+		'model': model,
+		'messages': serialized,
+		'temperature': temperature,
+		'max_completion_tokens': force_tokens or max_tokens,
+	}
+	if force_tokens is None:
+		kwargs['response_format'] = response_format
+	else:
+		kwargs['extra_body'] = {'ignore_eos': True, 'min_tokens': force_tokens}
+
 	t0 = time.perf_counter()
 	try:
-		resp = await judge.chat.completions.create(
-			model=model,
-			messages=serialized,
-			response_format=response_format,
-			temperature=temperature,
-			max_completion_tokens=max_tokens,
-		)
+		if stream:
+			ttft_ms = None
+			n_chunks = 0
+			usage = None
+			st_resp = await judge.chat.completions.create(**kwargs, stream=True, stream_options={'include_usage': True})
+			async for chunk in st_resp:
+				if getattr(chunk, 'usage', None):
+					usage = chunk.usage
+				ch = chunk.choices[0] if chunk.choices else None
+				if ch is not None and getattr(ch, 'delta', None) is not None and (ch.delta.content or ''):
+					if ttft_ms is None:
+						ttft_ms = (time.perf_counter() - t0) * 1000.0
+					n_chunks += 1
+			dt = (time.perf_counter() - t0) * 1000.0
+			ct = getattr(usage, 'completion_tokens', None) if usage else None
+			ct = ct or n_chunks or None
+			tpot_ms = ((dt - ttft_ms) / (ct - 1)) if (ttft_ms is not None and ct and ct > 1) else None
+			return {
+				'latency_ms': dt,
+				'ttft_ms': round(ttft_ms, 3) if ttft_ms is not None else None,
+				'tpot_ms': round(tpot_ms, 4) if tpot_ms is not None else None,
+				'server_prompt_tokens': getattr(usage, 'prompt_tokens', 0) if usage else 0,
+				'ctx_text_chars': text_chars,
+				'ctx_images': n_images,
+				'completion_tokens': ct,
+				'finish_reason': None,
+				'error': None,
+			}
+		resp = await judge.chat.completions.create(**kwargs)
 		dt = (time.perf_counter() - t0) * 1000.0
 		u = resp.usage
 		pt = getattr(u, 'prompt_tokens', 0) if u else 0
 		return {
 			'latency_ms': dt,
+			'ttft_ms': None,
+			'tpot_ms': None,
 			'server_prompt_tokens': pt,  # server reports 0 (not populated); kept for completeness
 			'ctx_text_chars': text_chars,
 			'ctx_images': n_images,
@@ -127,9 +183,11 @@ async def _one_request(
 			'finish_reason': resp.choices[0].finish_reason if resp.choices else None,
 			'error': None,
 		}
-	except Exception as e:  # noqa: BLE001
+	except Exception as e:
 		return {
 			'latency_ms': (time.perf_counter() - t0) * 1000.0,
+			'ttft_ms': None,
+			'tpot_ms': None,
 			'server_prompt_tokens': 0,
 			'ctx_text_chars': text_chars,
 			'ctx_images': n_images,
@@ -149,19 +207,34 @@ async def measure_latency(
 	temperature: float = 0.0,
 	top_k_label: str | None = None,
 	out: Path | None = None,
+	stream: bool = False,
+	force_tokens: int | None = None,
+	task_ids_file: Path | None = None,
+	steps_per_task: int = 0,
 ) -> dict:
 	task_dirs = find_task_dirs(run_dir)
 	if not task_dirs:
 		raise SystemExit(f'No task folders with step_* found under {run_dir}')
 
 	rng = random.Random(seed)
-	rng.shuffle(task_dirs)
+	requested_task_ids = None
+	if task_ids_file is not None:
+		requested_task_ids = [
+			line.strip() for line in task_ids_file.read_text().splitlines() if line.strip() and not line.lstrip().startswith('#')
+		]
+		by_name = {path.name: path for path in task_dirs}
+		missing = [name for name in requested_task_ids if name not in by_name]
+		if missing:
+			raise SystemExit(f'Task ids not found under {run_dir}: {missing[:8]}')
+		task_dirs = [by_name[name] for name in requested_task_ids]
+	else:
+		rng.shuffle(task_dirs)
 	# Build replayable tasks until we have task_num usable ones.
 	pool: list[TaskReplay] = []
 	for td in task_dirs:
 		if len(pool) >= task_num:
 			break
-		t = _load_task(td, start_mode, rng)
+		t = _load_task(td, start_mode, rng, steps_per_task=steps_per_task)
 		if t is not None:
 			pool.append(t)
 	if not pool:
@@ -193,7 +266,12 @@ async def measure_latency(
 		# Send the current step of every active task concurrently -> one server batch.
 		t0 = time.perf_counter()
 		results = await asyncio.gather(
-			*[_one_request(judge, model, t.step_files[t.cur_idx], t.response_format, max_tokens, temperature) for t in active]
+			*[
+				_one_request(
+					judge, model, t.step_files[t.cur_idx], t.response_format, max_tokens, temperature, stream, force_tokens
+				)
+				for t in active
+			]
 		)
 		batch_latency_ms = (time.perf_counter() - t0) * 1000.0
 
@@ -206,7 +284,16 @@ async def measure_latency(
 			if r['completion_tokens'] is not None:
 				t.completion_tokens.append(r['completion_tokens'])
 			t.steps_done += 1
-			rec_tasks.append({'task': t.name, 'step_idx': t.cur_idx, **r})
+			msg_path = t.step_files[t.cur_idx]
+			rec_tasks.append(
+				{
+					'task': t.name,
+					'step_idx': t.start_idx + t.cur_idx,
+					'step_dir': msg_path.parent.name,
+					'messages_sha256': hashlib.sha256(msg_path.read_bytes()).hexdigest(),
+					**r,
+				}
+			)
 			t.cur_idx += 1
 
 		comp = sum(r['completion_tokens'] or 0 for r in results)
@@ -245,6 +332,22 @@ async def measure_latency(
 	import statistics as st
 
 	bl = [b['batch_latency_ms'] for b in batch_steps]
+	_tt = [r['ttft_ms'] for b in batch_steps for r in b['tasks'] if r.get('ttft_ms') is not None]
+	_tp = [r['tpot_ms'] for b in batch_steps for r in b['tasks'] if r.get('tpot_ms') is not None]
+
+	def _stats(v):
+		if not v:
+			return None
+		sv = sorted(v)
+		return {
+			'mean': round(st.mean(v), 3),
+			'median': round(st.median(v), 3),
+			'p90': round(sv[min(int(0.9 * len(sv)), len(sv) - 1)], 3),
+			'min': round(min(v), 3),
+			'max': round(max(v), 3),
+			'n': len(v),
+		}
+
 	per_task = [
 		{
 			'task': t.name,
@@ -265,14 +368,22 @@ async def measure_latency(
 			'batch_size': batch_size,
 			'start_mode': start_mode,
 			'seed': seed,
+			'task_ids_file': str(task_ids_file) if task_ids_file else None,
+			'requested_task_ids': requested_task_ids,
+			'selected_task_ids': [task.name for task in pool],
+			'steps_per_task': steps_per_task,
 			'model': model,
 			'top_k_label': top_k_label,
 			'max_tokens': max_tokens,
 			'temperature': temperature,
+			'stream': stream,
+			'force_tokens': force_tokens,
 			'total_wall_s': round(total_wall_s, 1),
 			'num_batch_steps': len(batch_steps),
 		},
 		'aggregate': {
+			'ttft_ms': _stats(_tt),
+			'tpot_ms': _stats(_tp),
 			'batch_latency_ms': {
 				'mean': round(st.mean(bl), 1) if bl else 0,
 				'median': round(st.median(bl), 1) if bl else 0,
