@@ -183,7 +183,18 @@ class GeminiEngine:
 			try:
 				with self._sema:
 					r = json.load(urllib.request.urlopen(req, timeout=180))
-				return [r['candidates'][0]['content']['parts'][0]['text']]
+				# Non-streaming responses can still arrive as SEVERAL text parts
+				# (split at arbitrary points, e.g. "**Reason" | "ing**: ..."); reading
+				# only parts[0] cut ~13% of screenshot scores short of their "Score" line.
+				cand = r['candidates'][0]
+				parts = cand['content']['parts']
+				text = ''.join(p.get('text', '') for p in parts if 'text' in p)
+				if not text:
+					raise KeyError('no text part')
+				fin = cand.get('finishReason')
+				if fin != 'STOP' or len(parts) > 1:  # visibility for any residual truncation
+					print(f'  [gemini] finishReason={fin} parts={len(parts)} chars={len(text)}', file=sys.stderr, flush=True)
+				return [text]
 			except urllib.error.HTTPError as e:
 				last_err = e
 				# 503 "high demand" comes in bursts lasting minutes — back off up to 90s.
