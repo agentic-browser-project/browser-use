@@ -197,9 +197,15 @@ class GeminiEngine:
 				return [text]
 			except urllib.error.HTTPError as e:
 				last_err = e
-				# 503 "high demand" comes in bursts lasting minutes — back off up to 90s.
+				# 429/503 are rate shaping, and a successful call is ~1 s, so back off
+				# briefly with jitter (2 s base, 30 s cap) rather than 5 s doubling to
+				# 90 s — at 64 concurrent the long sleeps, not the errors, were the
+				# throughput drag. Every retry is logged so the rate can be measured.
 				if e.code in (429, 500, 503) and attempt < self.RETRIES - 1:
-					time.sleep(min(5 * 2 ** attempt, 90) + random.uniform(0, 5))
+					wait = min(2 * 2 ** attempt, 30) + random.uniform(0, 2)
+					print(f'  [gemini] retry {attempt + 1}/{self.RETRIES} after HTTP {e.code} (sleep {wait:.0f}s)',
+					      file=sys.stderr, flush=True)
+					time.sleep(wait)
 					continue
 				raise
 			except (KeyError, IndexError) as e:  # safety block / empty candidate
