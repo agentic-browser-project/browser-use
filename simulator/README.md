@@ -107,8 +107,15 @@ This pulls from the upstream [WebVoyager](https://github.com/MinorJerry/WebVoyag
   `data/reference_answer.json` (per-site, types `golden`/`possible`).
 - `data/gaia_web.jsonl` — 90 GAIA web tasks, each with an inline ground-truth answer.
 - `data/webarena_test.raw.json` — WebArena tasks (used by the context-length study).
+- `data/online_mind2web.json` — 300 live-web tasks over ~147 sites from
+  [Online-Mind2Web](https://github.com/OSU-NLP-Group/Online-Mind2Web) (`easy`/`medium`/`hard`
+  levels, no reference answers — judged with `eval --mode webjudge`). The dataset is
+  **gated** on HuggingFace (`osunlp/Online-Mind2Web`): the download needs an HF token
+  (`HF_TOKEN` env or `huggingface-cli login`); the gate is auto-approve and the script
+  requests access on first use.
 
-`--source {both,webvoyager,gaia}` selects which to draw from (default `both`).
+`--source {both,webvoyager,gaia,online_mind2web,all}` selects which to draw from
+(default `both` = webvoyager+gaia; `all` adds online_mind2web).
 
 ## Usage
 
@@ -122,6 +129,25 @@ python -m simulator capture --task-num 999 --source both \
 # success eval — judge is the served Qwen3-VL in FULL attention,
 # so restart the server at --top-k 100000 first, then:
 USE_TSA=1 python -m simulator eval simulator/runs/WebVoyager-GAIA-sparse-topk32 --mode success
+
+# Online-Mind2Web run + its official WebJudge evaluation (no reference answers:
+# key-point extraction -> per-screenshot 1-5 relevance scoring -> final judgment
+# over the action history + screenshots scoring >= --score-threshold, default 3):
+python -m simulator capture --task-num 999 --source online_mind2web \
+    --batch-size 3 --max-steps 30 --task-timeout 1800 --llm-timeout 240 \
+    --out-dir simulator/runs/OnlineMind2Web-sparse-topk32
+USE_TSA=1 python -m simulator eval simulator/runs/OnlineMind2Web-sparse-topk32 --mode webjudge
+# writes webjudge_eval.json per task; summary reports success overall and per level
+
+# OFFICIAL Online-Mind2Web WebJudge — the benchmark authors' own eval code
+# (vendored verbatim under simulator/third_party/online_mind2web/), with the judge
+# calls going to the Gemini API (same key conventions as the in-run judge):
+python -m simulator.scripts.official_webjudge simulator/runs/OnlineMind2Web-sparse-topk32
+# exports <run>/official_webjudge/trajectories/ in their v1 format, runs their
+# auto_eval (resumable), writes official_webjudge_eval.json back per task, and
+# prints success overall + per level. --model / --score-threshold / --workers;
+# SIM_JUDGE_CONCURRENCY caps concurrent Gemini calls,
+# SIM_OFFICIAL_JUDGE_MAX_TOKENS=0 restores their exact 512-token request.
 
 # action-replay fidelity (can the recorded context reproduce each step offline?):
 python -m simulator eval simulator/runs/<run> --mode replay

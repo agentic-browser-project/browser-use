@@ -54,6 +54,8 @@ class TrajectoryRecorder:
 			'reference_answer': task.reference_answer,
 			'reference_type': task.reference_type,
 			'reference_notice': task.reference_notice,
+			'level': task.level,
+			'reference_length': task.reference_length,
 		}
 		self._write_meta()
 

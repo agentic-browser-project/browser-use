@@ -14,6 +14,7 @@ WEBVOYAGER_JSONL = DATA_DIR / 'webvoyager_data.jsonl'
 GAIA_JSONL = DATA_DIR / 'gaia_web.jsonl'
 REFERENCE_JSON = DATA_DIR / 'reference_answer.json'
 WEBARENA_JSON = DATA_DIR / 'webarena_test.raw.json'
+ONLINE_MIND2WEB_JSON = DATA_DIR / 'online_mind2web.json'
 
 # --- provider ------------------------------------------------------------- #
 DEFAULT_MODEL = 'qwen3.5-omni-plus-2026-03-15'  # multimodal (text+image); fallback: 'qwen3-vl-plus'
@@ -75,7 +76,7 @@ class RunConfig:
 
 	task_num: int = 2
 	batch_size: int = 2
-	source: str = 'both'  # 'webvoyager' | 'gaia' | 'both'
+	source: str = 'both'  # 'webvoyager' | 'gaia' | 'both' (= webvoyager+gaia) | 'online_mind2web' | 'all'
 	model: str = DEFAULT_MODEL
 	max_steps: int = 20
 	task_timeout: float = 300.0  # heavy sites under several headed browsers run ~30-50s/step

@@ -1,21 +1,28 @@
-"""Offline evaluation: WebVoyager task-success judging + action-replay fidelity."""
+"""Offline evaluation: WebVoyager task-success judging, Online-Mind2Web WebJudge,
+and action-replay fidelity."""
 
 from pathlib import Path
 
 from simulator.eval.replay import evaluate_replay
 from simulator.eval.success import evaluate_success
+from simulator.eval.webjudge import evaluate_webjudge
 
-__all__ = ['evaluate_success', 'evaluate_replay', 'evaluate_path']
+__all__ = ['evaluate_success', 'evaluate_webjudge', 'evaluate_replay', 'evaluate_path']
 
 
-def evaluate_path(path: Path, mode: str = 'success', model: str | None = None, k: int = 2):
-	"""Dispatch to the success judge (default) or the action-replay eval."""
+def evaluate_path(path: Path, mode: str = 'success', model: str | None = None, k: int = 2,
+                  score_threshold: int = 3):
+	"""Dispatch to the success judge (default), the WebJudge eval, or the action-replay eval."""
 	if mode == 'success':
 		from simulator.config import DEFAULT_JUDGE_MODEL, TSA_MODEL, USE_TSA
 
 		return evaluate_success(path, model or (TSA_MODEL if USE_TSA else DEFAULT_JUDGE_MODEL), k)
+	if mode == 'webjudge':
+		from simulator.config import DEFAULT_JUDGE_MODEL, TSA_MODEL, USE_TSA
+
+		return evaluate_webjudge(path, model or (TSA_MODEL if USE_TSA else DEFAULT_JUDGE_MODEL), score_threshold)
 	if mode == 'replay':
 		from simulator.config import DEFAULT_MODEL
 
 		return evaluate_replay(path, model or DEFAULT_MODEL)
-	raise SystemExit(f"unknown eval mode: {mode!r} (use 'success' or 'replay')")
+	raise SystemExit(f"unknown eval mode: {mode!r} (use 'success', 'webjudge' or 'replay')")
