@@ -148,6 +148,12 @@ python -m simulator.scripts.official_webjudge simulator/runs/OnlineMind2Web-spar
 # prints success overall + per level. --model / --score-threshold / --workers;
 # SIM_JUDGE_CONCURRENCY caps concurrent Gemini calls,
 # SIM_OFFICIAL_JUDGE_MAX_TOKENS=0 restores their exact 512-token request.
+# Judge calls run with Gemini thinking DISABLED (thinkingBudget 0): thinking
+# tokens count against maxOutputTokens, and at the official 512 the model spent
+# ~490 on thoughts and truncated every "**Score**:" / "Status:" line (parsed as
+# score 0 / failure). SIM_OFFICIAL_JUDGE_THINKING=1 re-enables it. Each task is
+# judged in its own auto_eval() call, so an API error skips only that task
+# (resumable), not the rest of the worker's chunk.
 
 # action-replay fidelity (can the recorded context reproduce each step offline?):
 python -m simulator eval simulator/runs/<run> --mode replay

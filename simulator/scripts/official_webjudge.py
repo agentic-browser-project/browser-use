@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
 import shutil
 import sys
 import threading
@@ -154,37 +155,48 @@ class GeminiEngine:
 					parts.append({'inline_data': {'mime_type': mime, 'data': url.split(',', 1)[1]}})
 		return sys_text, parts
 
+	RETRIES = 8
+
 	def generate(self, messages, max_new_tokens=512, temperature=0, model=None, **kwargs) -> list[str]:
 		sys_text, parts = self._convert(messages)
+		gen_cfg: dict = {
+			'temperature': temperature,
+			'maxOutputTokens': max(max_new_tokens, self.max_tokens_floor),
+		}
+		# Gemini bills thinking tokens against maxOutputTokens: at the official 512
+		# the model spends ~490 on thoughts and emits ~17 visible tokens
+		# (finishReason MAX_TOKENS), so the official "**Score**:" / "Status:" lines
+		# never arrive and parse as score 0 / failure. Judge calls run without
+		# thinking unless SIM_OFFICIAL_JUDGE_THINKING=1.
+		if os.environ.get('SIM_OFFICIAL_JUDGE_THINKING', '0') != '1':
+			gen_cfg['thinkingConfig'] = {'thinkingBudget': 0}
 		body = json.dumps({
 			'systemInstruction': {'parts': [{'text': sys_text}]},
 			'contents': [{'parts': parts}],
-			'generationConfig': {
-				'temperature': temperature,
-				'maxOutputTokens': max(max_new_tokens, self.max_tokens_floor),
-			},
+			'generationConfig': gen_cfg,
 		}).encode()
 		url = self.url if model is None else self.url.replace(self.model, model)
 		req = urllib.request.Request(
 			url, data=body, headers={'x-goog-api-key': self.api_key, 'Content-Type': 'application/json'})
 		last_err: Exception | None = None
-		for attempt in range(5):
+		for attempt in range(self.RETRIES):
 			try:
 				with self._sema:
 					r = json.load(urllib.request.urlopen(req, timeout=180))
 				return [r['candidates'][0]['content']['parts'][0]['text']]
 			except urllib.error.HTTPError as e:
 				last_err = e
-				if e.code in (429, 500, 503) and attempt < 4:
-					time.sleep(min(2 ** attempt * 2, 30))
+				# 503 "high demand" comes in bursts lasting minutes — back off up to 90s.
+				if e.code in (429, 500, 503) and attempt < self.RETRIES - 1:
+					time.sleep(min(5 * 2 ** attempt, 90) + random.uniform(0, 5))
 					continue
 				raise
 			except (KeyError, IndexError) as e:  # safety block / empty candidate
 				raise RuntimeError(f'Gemini returned no text: {e}') from e
 			except Exception as e:  # noqa: BLE001 — timeouts, transient network
 				last_err = e
-				if attempt < 4:
-					time.sleep(2 * (attempt + 1))
+				if attempt < self.RETRIES - 1:
+					time.sleep(min(5 * 2 ** attempt, 90))
 					continue
 				raise
 		raise last_err  # unreachable, keeps type-checkers happy
@@ -229,13 +241,29 @@ def run_official(export_dir: Path, out_dir: Path, model_name: str, score_thresho
 	workers = max(1, min(workers, len(task_ids)))
 	lock = threading.Lock()
 	labels: list[int] = []
+	failed: list[str] = []
+
+	# One auto_eval() call PER TASK: their loop has no try/except, so an API error
+	# that outlives the engine's retries would otherwise kill the whole chunk and
+	# silently skip every task after it. A failed task is left unjudged (no row
+	# in the output file) and picked up by the next, resumable run.
+	def worker(chunk: list[str]) -> None:
+		for tid in chunk:
+			try:
+				official_run.auto_eval(args, [tid], labels, lock, engine)
+			except Exception as e:  # noqa: BLE001
+				with lock:
+					failed.append(tid)
+				print(f'  [FAILED] {tid}: {type(e).__name__}: {str(e)[:160]}', file=sys.stderr, flush=True)
+
 	chunks = [task_ids[i::workers] for i in range(workers)]
-	threads = [threading.Thread(target=official_run.auto_eval, args=(args, chunk, labels, lock, engine))
-	           for chunk in chunks if chunk]
+	threads = [threading.Thread(target=worker, args=(chunk,)) for chunk in chunks if chunk]
 	for t in threads:
 		t.start()
 	for t in threads:
 		t.join()
+	if failed:
+		print(f'  {len(failed)} task(s) failed and were left unjudged (rerun to resume): {failed[:5]}...')
 	return out_file
 
 
