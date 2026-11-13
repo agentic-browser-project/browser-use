@@ -1,0 +1,72 @@
+{
+  "passed": true,
+  "synthetic_only": true,
+  "checks": [
+    {
+      "subset_size": 16,
+      "fixture": "fractional",
+      "passed": true,
+      "optimum": [
+        -8,
+        -10,
+        -16,
+        103
+      ]
+    },
+    {
+      "subset_size": 16,
+      "fixture": "ties",
+      "passed": true,
+      "optimum": [
+        0,
+        -1,
+        -2,
+        0
+      ]
+    },
+    {
+      "subset_size": 16,
+      "fixture": "primary_perfect",
+      "passed": true,
+      "optimum": [
+        83,
+        -10,
+        -19,
+        192
+      ]
+    },
+    {
+      "subset_size": 32,
+      "fixture": "fractional",
+      "passed": true,
+      "optimum": [
+        -68,
+        -22,
+        -34,
+        161
+      ]
+    },
+    {
+      "subset_size": 32,
+      "fixture": "ties",
+      "passed": true,
+      "optimum": [
+        0,
+        -1,
+        -2,
+        0
+      ]
+    },
+    {
+      "subset_size": 32,
+      "fixture": "primary_perfect",
+      "passed": true,
+      "optimum": [
+        161,
+        -14,
+        -16,
+        384
+      ]
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "repository": "agentic-browser-project/BrowserSparseAttention",
+  "commit": "caf646eb2b014789ad5871092561c57da9245b61",
+  "files": {
+    "analyze_chunk_ranking.py": "b0a9bebda896b7ddc5e662b1dad4e3ff41e618bf70f9fda9ab1e3a49abf5343b",
+    "analyze_per_head_selection.py": "338dcf10822b78e07fb3e92eb88f3948fe9a4bf6ddc3c2c8a4a37b5de70004a2",
+    "bsa_sglang/README.md": "18b0064ffff369ad7c0af9a68f452a2998176540bcc01b9737c8831d1decbcf6",
+    "bsa_sglang/__init__.py": "b9c9cd14a5991520803f62f1b221fca635c68ff5f5983ad558b035b20423282b",
+    "bsa_sglang/attention_equivalence_backend.py": "f22f0899a864cda20c0a0986dc561e4fdcacb6db0c1133abd2f6d18a08d4e129",
+    "bsa_sglang/attention_snapshot.py": "ddd2a7dc27231af4feee8f20d34efbb9274e5c6cf5f04948e2f6d96e234c38e1",
+    "bsa_sglang/backend.py": "e4f667b46eae012ac1a4fbd7346f7ddce17fa5e877d9564296ca5c88cd75504b",
+    "bsa_sglang/backend_v2.py": "ff22e95883bdec1ae78032aad0ce0b6a33a02223b1d371103e794d4eed623988",
+    "bsa_sglang/bench_v2.py": "ba43e51cb37361d0c06f6a834a179eb29c41a2da3ab02519f24f03fa6f95b65f",
+    "bsa_sglang/block_sort_backend.py": "52606491c539fc627f5c8ee0d669d1067fc2c458a099f7a9bfebd98b8138ed7c",
+    "bsa_sglang/boundary_packing.py": "50e0f2e661fdf25f6668188b303d76be9f1183d7faf3e46014e2b0408b6147da",
+    "bsa_sglang/boundary_packing_backend.py": "d26bffd64040b3005c43d987e45c0cd72acef86d80c1fbacb2be026166351dfc",
+    "bsa_sglang/cached_decode_backend.py": "dd24a14599345011bb611242fde59f76ca619a0a498db4da68412f39f75ff13b",
+    "bsa_sglang/config.py": "25b4acaa75b29153da9574784cb8363e3116c4adb4ca6b47a431da764fc11ce9",
+    "bsa_sglang/d_worst_packing.py": "6751445def890118a1b2b23e491614493e180cc7c1a0b8710be0babb1e90c819",
+    "bsa_sglang/envelope_build.py": "3bde60d23c9541d1ea6cac5a5a8ac13277ffc704e2544b02ee1ccd83587a6dac",
+    "bsa_sglang/fast_page_backend.py": "9f84ef02f17b66418971f259853b8060f5c422ea4ff5d70bf29907c4518a34e8",
+    "bsa_sglang/fused_decode.cu": "de782151c677c9d241455d029cbd169e633542a85a5e5035a9fcdd5ba1ec73f2",
+    "bsa_sglang/fused_decode_backend.py": "2db96b71b3c3f67a542a6b33db34346aae5792aad69fac6eb8655f9ef7dbf881",
+    "bsa_sglang/fused_score.cu": "7c9af3b59f0e928ba6989b8a649533bad4a40a258537365a018c2342bf4ba56d",
+    "bsa_sglang/fused_score.py": "75df284f185db651f36ec6b6526ba171d9672e100f3e7165cb82aad31716456a",
+    "bsa_sglang/graph_page_projection.cu": "9a55f6ac8e243735328a785548973566345e0983100f0f2c6ea80a2fa2adbc1e",
+    "bsa_sglang/hoisted_decode_backend.py": "f453cdf5591ee21278f4bcb06c81671931cc9f69c21f3cb2243659fb9503763b",
+    "bsa_sglang/launch_bsa_server.sh": "fea8b3497e43335340a815226173f6094fef584b7118e4f8aa78e62e55a13e8b",
+    "bsa_sglang/metadata.cu": "4ba77ad9b2df46816b0072694159cba04652d9eb2aa5030e2ef5873a5403c312",
+    "bsa_sglang/metadata.py": "f5e9ede7d46de14ae7059c4b2e6f63eb7184b388f56f2ae02244eb215588f648",
+    "bsa_sglang/multiturn_audit.py": "d703b83b9bf7f3ad80389a596077a6595b8690e026282f780d45d612c951ede6",
+    "bsa_sglang/native_head.cu": "2902bbbc7dfefe4a1cc77c4529cde3a28caca9d0708d7f71e87c7addd112cbd4",
+    "bsa_sglang/native_head_backend.py": "ad76912e5336a58268c3325e081d502d035fad9ef8f8e9ca1cf26804e11d9878",
+    "bsa_sglang/native_split_attention.cu": "f2097e98f8622ba2f03452570edf3d4714d08fef6f3167724935138544844d3d",
+    "bsa_sglang/native_split_attention.py": "7fd7fe88e7abb0b0c666795caab676bedb7857a38c44508159dd4ae16cdf2823",
+    "bsa_sglang/net_selection.py": "823c5c49f056aeff6c03a358cf689ae574ee49fd4f98feefa17062907f72c718",
+    "bsa_sglang/packing_batch.py": "ba1e9b4598627552b90c9c6b486548b965fc012c13823f702f7ee958087ba83b",
+    "bsa_sglang/packing_batch_cuda.cu": "ade5ca3cf2ea8623dc9dd84c928a69a1dca4ff6b6f875b657e3e349aaa124646",
+    "bsa_sglang/packing_batch_v2_cuda.cu": "8440d2d887290b8fd12e1776b7f53e8db95ea64e64ca36a9aa687b4b118d242a",
+    "bsa_sglang/packing_cuda.cu": "ee2db744fd15d0e94faeda3d42ab8f627faada0549446851e0ebb98e0bd86a52",
+    "bsa_sglang/packing_cuda_backend.py": "a6fcdfa5020d1f79dbb8c9b28616a9136139bc26add8ca7d0b67365d93dbbf7c",
+    "bsa_sglang/packing_gpu.py": "c96cf735360d74e76332859c7806b44540f0695f67e3641aeaeb1d32236d3232",
+    "bsa_sglang/packing_linkage_cuda.cu": "a792185097baddc82c4f292fb3eddf1d083fb02e00eded919200532fad94d0ed",
+    "bsa_sglang/page_defaults.py": "a03259a42bd70bf620caf47c36c6742f8607859e2a2284261de15e82c9db359f",
+    "bsa_sglang/page_telemetry.py": "6eff0389f0aee83dc0e2bb028af35e66bc4741263ade811468bd32c1703862e4",
+    "bsa_sglang/post_score_backend.py": "f10cd2e8409892c72ef67ca562dd631fd95d1cace036ae2c7bfdc20da417d818",
+    "bsa_sglang/post_sort_backend.py": "d976cd5334f724e8c7baf437a3bf6011ebda9d1b26f6c1e9c348cd2714926ac8",
+    "bsa_sglang/prof_bs32.py": "c8ec1999510d837543c4cb069c09a6dfcf8fa4afd2eb2f263eb92fe1190b59c5",
+    "bsa_sglang/query_fused_backend.py": "b1a9595abb99dc040cb85513ae297653ffe8a64e5857d9b94d270d1e7500748e",
+    "bsa_sglang/request_major_backend.py": "dc5cca1d849f2de7521525f7885483ca3fba89517ffad46b34b1da1ba2f9eab9",
+    "bsa_sglang/score_batched.cu": "057a1b2a938df29e225cf4ada96987e019e79699834a0f5cb877000f35484ab4",
+    "bsa_sglang/score_batched.py": "f21b58c0e9c51525d3037dfa275e44fc2cf15339c955ed9f3878e0181e99f43e",
+    "bsa_sglang/score_mma.cu": "75ede41a530726dc65cf6c65588246bcea1892c6dc327fc6d27a07a6240435a2",
+    "bsa_sglang/score_mma.py": "e01e8603d6c037180e18a353b37e833b57f295153e95c3e34074c93be5c8d4c8",
+    "bsa_sglang/score_post.cu": "1537392224b43badc449ad1ce2586fc064369bbb17bbf4b86e3a1bd81ae64bb9",
+    "bsa_sglang/score_shadow.py": "d9d6809dcb78d99519feb837faac21b8fc6654053b5ba09c936e2ed478d1e109",
+    "bsa_sglang/score_simt.cu": "a27589e977497ed38a04c86e86791f324217fb611e4a1943fa9727329d30d7e7",
+    "bsa_sglang/score_simt.py": "901517b15401e39c270b043ade260cad652d1f649c873ee101e11fff1af0cfb5",
+    "bsa_sglang/score_stack.cu": "5d40724760f78f8c2b6de69d58db99a398a7ebc57c81c2a2fe1b6ae8f50d90a4",
+    "bsa_sglang/score_stack.py": "b2f194d81b8977e6e25c50071132d1009dafe41dafa6e9c88c10fb278dc611ed",
+    "bsa_sglang/score_tiles.cu": "28b8741b605dd1f693a91dbd7d27491a3b73997d2a9593a304775b3bfc6d3d30",
+    "bsa_sglang/score_tiles.py": "f3fbe61e8c77453340024bb4cc6202f63e430b54156535e80c06daf944318acf",
+    "bsa_sglang/selected_pages.cu": "5b7f428342461a691b213929acd379a3ce66d0d72591252135e469726cb55492",
+    "bsa_sglang/selected_pages_backend.py": "c2ee13e45e3a309d6bf1b7a41526bdacd5952bac22cc03677089e9861a804fc0",
+    "bsa_sglang/selection.py": "720332bfde3f603ee52e59f63f9985a59ac83912d2b502f557c423203bbd8757",
+    "bsa_sglang/selection_adaptive.cu": "60fbc98ed9ac275d6a60f8964a3f30be1458b9a7c514f11f43142351f886fd22",
+    "bsa_sglang/selection_adaptive.py": "12ea368d7d94e4955ac459e81066fe802d2672a849d9da486fc42ca52db885f4",
+    "bsa_sglang/selection_net.cu": "ebb5c06a3cb52b601871675c09fe9d4c30b9ec28dedeb25edec1bd70883c7add",
+    "bsa_sglang/selection_only.cu": "f4c2f2ab67aa12b14356c7feaaca17628722be28c3de78dabe12c52d4db75a64",
+    "bsa_sglang/selection_tuned.cu": "65f1ac631a87f0ad19cb8541a502238fb7bbac0fd2156aa543ccf98c9770c888",
+    "bsa_sglang/selection_weighted.cu": "acc84121ce837ecf140fb369d1121b6d934dea327f38f8fc6ef8f1d90c60d663",
+    "bsa_sglang/selection_weighted.py": "6adcc51063ca554e065a809da9267cf0fafd2d3374351fdfaf602395837c563c",
+    "bsa_sglang/selector_capture.py": "73d160c879eb42ea9fe4e5b91f205573eba986c1abcd0a549a39677dd21912a4",
+    "bsa_sglang/selector_cost.cu": "edc870c5a542afdce87b7c618f835cfa5bba9fe6778aa524401153bf70a52d04",
+    "bsa_sglang/shared_packed_backend.py": "d6d139ad22acba04ba654b1ebdae4e279bfc0deedfc7eb4086f0a4fcd84bbe0d",
+    "bsa_sglang/shared_packed_metadata.py": "cb4138b937f296ecb6ce768a81e200853c74ac3201f90b0cfff9ac69a66325ab",
+    "bsa_sglang/shared_packed_store.py": "757414fc3b17735a1225dd8600a62da5795712168657c6344befb75de6b8c9d4",
+    "bsa_sglang/smoke_semantic.py": "52e6f5b5b97fed070aeb20e346860fd96d73cba91f3093705f9ff45381e951ba",
+    "bsa_sglang/smoke_v2.py": "208a763c159b76649c8a8132a417a2040a1d5cef2c9253e4d8a11e0f20de6aca",
+    "bsa_sglang/sorted_native_backend.py": "969fc032219ecf98b68470c14869df8de4e8a72c7ae58ae370111dd6e8d5fd15",
+    "bsa_sglang/split_attention.cu": "e671cb2740cb6e3d9bd6bf5f01ffb6687b656f48ff503227345e17f61530d111",
+    "bsa_sglang/split_attention.py": "18d57154a449246dc47c9448dacdd3ae56653d088889c6b67eff4ed50da7a273",
+    "bsa_sglang/system_prefix.py": "0b3438fa172641e321d0dea4cfa2133cd6366d1b3e278eccda6a86c0de2349d2",
+    "bsa_sglang/system_prefix_backend.py": "fbecb6929148e7f8a7d9229479399c87aceafc123b195b3c5707a82ff1e5fc0b",
+    "bsa_sglang/test_gen_chunks.py": "6a268455979b69d56d3475318391b260ebe995b57ef1390675b6abb2b670d61a",
+    "bsa_sglang/test_mixmax_batched.py": "3b7a3a4e43c02b5ce96191b6e97970c1463047b3d21b840249112f939b8030de",
+    "bsa_sglang/test_page_budget.py": "e43e454469bda7ad9fdb5e419d874f3fc01e673d31d103e4ac915c971f7ac7d8",
+    "bsa_sglang/test_region_floor.py": "d84ab8bd0ccc980d708f1d8708329124730d2ff444ba5f195d77f696c3d79340",
+    "bsa_sglang/test_selection_scoring.py": "c332add83c0a3f7e2d68f33dd178beb9307b7db56755a38d7b7c89b10e7c6085",
+    "bsa_sglang/test_sys_cap.py": "4d108091419196fda3af8be827245e465d11d208106296ef831ce2a3dddd4171",
+    "bsa_sglang/tuned_packing_backend.py": "a4246468854d8dae3cd5a40ea2838b5b3b69361a402d060cdad6dddf93560bab",
+    "bsa_sglang/tuned_selection.py": "2b2bf6489a0a83089aaabce791141175343be326df025ed862bea7a84175ad67",
+    "bsa_sglang/virtual_packing_backend.py": "219e108b55594bce4a3524a9b08251e3a9fc3ffdb965c6431f443d7d9edd6d9a",
+    "bsa_sglang/vortex_fullpage.cu": "89d6d4fd1c4a9d78e0e5e7ca8591714bb5fb1a94d77e3fb60e5746e99b4f33c3",
+    "bsa_sglang/vortex_fullpage.py": "69a3f53b9b4bdad1e1545714f50e3c9d404015e0446accc7f960f43b0c1d73ea",
+    "bsa_sglang/vortex_page_audit.py": "d3b58432a9b2788e28e5d6cdef12264ba475ae261af71cb679166d4dbbc1f4ef",
+    "python/d_worst_layout.py": "6181e79e884faba72d1239e7c2c8200681ce423abf180b0a866add0670d2ca8c",
+    "python/jit_build.py": "506a0826d4eb70c8fb1f1a61b4c30c115c210281b89d49eb90cd43db8441a878",
+    "python/kv_cache.py": "f3beb266648b367e9736d0b67f371a1de5c80dd73459ed17413a40f370c03030",
+    "python/kv_page_rearrange.py": "6eef7b2e66029224f97104bc5d2f1e4921434b770f0472e7d2b936a0e2577d90",
+    "python/test_kv_page_rearrange.py": "a93e9b2c156640ca6e8adc6928ac73cdd8a71ad8db832efff3e5017242de7204",
+    "python/test_tma_decode.py": "398e5966c6656705afeee3166fd2fd153415457294ddb63b4d4fa3baad3635cd",
+    "python/test_xqa_decode.py": "8e72f61d64b31e4a48915dbff6794d44d3a8a87dfdfc15a3c4452bdfbd700ee0",
+    "python/tree_parser.py": "3029f0156b3b059c12f74a59713739caf468bbb3b6468a2726e3aefdc7076fb8",
+    "python/tree_sparse_decode.py": "752bf2f049d0430cedaf6bd929963c0871d0991576c884e28fab5f3324698d91",
+    "python/tree_sparse_selector.py": "41336f3c1249dc171091408ea1bd63e17ee32f81af43c814e055824dc4a6a5fc",
+    "results/webvoyager_e2e/README_GAIA_PAGE64_WN_SWEEP.md": "1385f0a2ed69135aaa76065b2971338154b4a04d854932938c73c97cc12e2e83",
+    "results/webvoyager_e2e/mixmax_sweep_sbatch/om2w/claude-om2wdpB-r0p125-r1.sbatch": "56cbda847ec1d790aa11ab762937e1668759bfda5b442483bbcbc37122262ecd",
+    "results/webvoyager_e2e/results/mixmax_wn_sweep/sglang_packed/README_GAIA_PACKED.md": "f43077bea5a03f2174045c30da5177d194ddbd1ec6afe0a160a170588946b981",
+    "results/webvoyager_e2e/results/mixmax_wn_sweep/sglang_packed/README_OM2W_PACKED.md": "370b459f06a7b7bc445ff450112ba0cb41b936ebb1f5d2c73faaa6a67709006f"
+  },
+  "configurations": [
+    [
+      1,
+      0.125
+    ],
+    [
+      1,
+      0.25
+    ],
+    [
+      1,
+      0.375
+    ],
+    [
+      1,
+      0.5
+    ],
+    [
+      4,
+      0.125
+    ],
+    [
+      4,
+      0.25
+    ],
+    [
+      4,
+      0.375
+    ],
+    [
+      4,
+      0.5
+    ],
+    [
+      8,
+      0.125
+    ],
+    [
+      8,
+      0.25
+    ],
+    [
+      8,
+      0.375
+    ],
+    [
+      8,
+      0.5
+    ],
+    [
+      16,
+      0.125
+    ],
+    [
+      16,
+      0.25
+    ],
+    [
+      16,
+      0.375
+    ],
+    [
+      16,
+      0.5
+    ],
+    [
+      32,
+      0.125
+    ],
+    [
+      32,
+      0.25
+    ],
+    [
+      32,
+      0.375
+    ],
+    [
+      32,
+      0.5
+    ]
+  ],
+  "page_sizes": {
+    "16": 32,
+    "32": 64
+  }
+}

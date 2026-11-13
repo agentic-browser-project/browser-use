@@ -1,0 +1,14 @@
+__pycache__/
+*.log
+*.lock
+layouts/
+control/
+inputs/records.json
+replay_orphan_checkpoints/
+captures/
+*.pt
+*.safetensors
+!settings.json
+!runtime_manifest.json
+!inputs/manifest.json
+!validation/*.json

@@ -1,0 +1,20 @@
+{
+  "model": "Qwen/Qwen3-32B",
+  "dtype": "bfloat16",
+  "anchors": [1, 2, 4, 8, 16, 32, 64, 128],
+  "alphas": [0.125, 0.25, 0.5],
+  "page_size": 32,
+  "maximum_chunk_size": 16,
+  "merge_target": 6,
+  "page_budget_ratio": 0.125,
+  "max_new_tokens": 1024,
+  "enable_thinking": true,
+  "maximum_tasks": 64,
+  "screen_after_completed_tasks": 16,
+  "subset_sizes": [16, 32],
+  "metric": "action_type_and_target_index_agreement",
+  "aggregation": "average eligible steps within each task, then give tasks equal weight",
+  "target": [32, 0.25],
+  "secondary_targets": [[16, 0.25], [8, 0.25]],
+  "stop_when_target_ranks_first": false
+}

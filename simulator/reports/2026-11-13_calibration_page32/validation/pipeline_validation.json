@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "synthetic_only": true,
+  "complete_tasks": 16,
+  "excluded_partial_task": true,
+  "multiple_step_task_score": 0.5,
+  "task_macro_mean": 0.96875,
+  "report_and_figures_generated": true
+}

@@ -1,0 +1,15 @@
+{
+  "sources": {
+    "run_replay.py": "105eb2cb1fdd98bef5af73f04087625e26f3eb186ab56943069d97d7ee4155f4",
+    "page64_attention.py": "b8a2130c8ef0a11e422ce4cc9ba87f82cda5837c691db640139dcc8657924213",
+    "fused_kv_gather.cu": "a827bb63f8131d5b380ca36e5ea534f63e93bb5938ed2ad1725515115444b3f5"
+  },
+  "settings_sha256": "a126e6dfc79413de38c21d8b350f78b8ba4e9600bd466c7d01dd1b6226ec0dea",
+  "input_manifest_sha256": "6555a893dd81418a0e5418079cee458691ec0e0cb794feffc400415e63018da7",
+  "previous_driver_sha256": "89839172b7941d2303646597bd42d5f16e255e09ae873b633d9e53467d3c9cfb",
+  "runtime_sha256": "a7c33960356e715c6e2f0f4865cfc3878fe2b513fd46fc4acc662af57df0972c",
+  "torch": "2.10.0a0+b558c986e8.nv25.11",
+  "gpu": "NVIDIA GB10",
+  "model": "Qwen/Qwen3-32B",
+  "dtype": "bfloat16"
+}
