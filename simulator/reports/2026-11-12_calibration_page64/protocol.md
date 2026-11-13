@@ -23,3 +23,17 @@ The primary criterion is exact agreement with the dense response in the entire a
 For each subset size, maximize the minimum match-count margin of (32,0.25) against every other configuration. Break ties by maximizing its match count. Positive margin means uniquely first, zero means first including ties, and a negative exact optimum means no first-place subset of that size exists in the measured eligible pool. Preserve each rolling snapshot. Also report full action equality, action-type agreement, fixed primary cohorts, and the entire measured pool.
 
 The search is explicitly outcome-dependent and favors a named configuration. Selected subsets answer an existence question within this pool. Their ranks are not unbiased evidence of general superiority or online task accuracy. Do not change the metric or exclude unfavorable outcomes to manufacture a win.
+
+## Metric correction on 2026-11-13
+
+Integer target IDs and equivalent integer-string encodings now match, for example
+`8117` and `"8117"`. This correction applies uniformly to every configuration in
+both page profiles. Target order and multiplicity, action-type sequences, dense
+eligibility, and the finished/parseable-output requirements are unchanged. XML
+and alternate target-field names are not newly accepted. Booleans and floats
+are not coerced to integer IDs. No inference outputs are modified or regenerated.
+
+`target_equal` uses the corrected comparison. `target_equal_raw` retains the old
+Python list comparison for audit. Analysis manifests identify the metric as
+`integer_target_ids_v2`. Earlier results remain historical raw-metric results,
+not estimates under the corrected rule.

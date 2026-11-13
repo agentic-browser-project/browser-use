@@ -8,12 +8,13 @@ import numpy as np
 import pandas as pd
 import scipy
 from scipy.optimize import Bounds,LinearConstraint,milp
+from action_metrics import METRIC_VERSION,target_indices_equal
 
 ROOT=Path(__file__).resolve().parents[1]
 SETTINGS=json.loads((ROOT/'settings.json').read_text())
 CONFIGS=[(a,b) for a in SETTINGS['anchors'] for b in SETTINGS['alphas']]
 TARGET=(32,.25)
-METRICS=('target_equal','type_equal','action_equal','finished','parsed')
+METRICS=('target_equal','target_equal_raw','type_equal','action_equal','finished','parsed')
 
 
 def save_json(path,value):
@@ -89,7 +90,8 @@ def load_results():
         for v in variants[:-1]:
             valid=bool(v['finished'] and v['parsed'])
             type_match=valid and v['types']==dense['types']
-            joint_match=type_match and v['indices']==dense['indices']
+            joint_match=type_match and target_indices_equal(v['indices'],dense['indices'])
+            joint_raw=type_match and v['indices']==dense['indices']
             full_match=valid and v['actions']==dense['actions']
             category=('dense_not_index_eligible' if not eligible else
                 'invalid_or_unfinished_sparse' if not valid else 'different_action_types' if not type_match else
@@ -97,6 +99,7 @@ def load_results():
                 'same_types_and_indices_different_arguments' if not full_match else 'complete_action_match')
             rows.append(dict(task=info['task'],website=info['website'],order=order,A=v['A'],alpha=v['alpha'],
                 target_equal=float(joint_match) if eligible else np.nan,
+                target_equal_raw=float(joint_raw) if eligible else np.nan,
                 type_equal=float(type_match) if dense_valid else np.nan,
                 action_equal=float(full_match) if dense_valid else np.nan,
                 finished=float(v['finished']),parsed=float(valid),generated_tokens=len(v['tokens']),
@@ -140,6 +143,7 @@ def main():
     pd.DataFrame(membership,columns=['task','website','subset_size','selected']).to_csv(output/'subset_membership.csv',index=False)
     save_json(output/'subset_search.json',searches)
     manifest=dict(complete=len(metadata)==64,completed_tasks=len(metadata),planned_tasks=64,
+        metric_version=METRIC_VERSION,metric_sha256=hashlib.sha256(Path(__file__).with_name('action_metrics.py').read_bytes()).hexdigest(),
         dense_valid_tasks=sum(r['dense_valid'] for r in metadata),dense_index_eligible_tasks=len(matrix),
         settings=SETTINGS,settings_sha256=hashlib.sha256((ROOT/'settings.json').read_bytes()).hexdigest(),
         script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),replay_hashes=hashes)

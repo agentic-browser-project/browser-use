@@ -23,3 +23,11 @@ The shared runtime dependencies and environment are documented in the
 Inference requires the external model, frozen inputs, and pinned BrowSA source
 snapshot. These large runtime artifacts are not part of this code upload.
 See [`protocol.md`](protocol.md) for experiment and subset-search definitions.
+
+## Target-ID comparison correction
+
+The primary joint metric now treats integer IDs and equivalent integer strings
+as the same target. For example, `8117` matches `"8117"`. This applies to every
+configuration. The previous comparison is retained as `target_equal_raw`, while
+`target_equal` uses `integer_target_ids_v2`. Action order, output completion, and
+the action JSON parser are unchanged. See the protocol amendment for details.

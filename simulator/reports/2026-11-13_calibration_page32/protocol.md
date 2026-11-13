@@ -29,3 +29,17 @@ The declared selection priority is lexicographic:
 Use integer-scaled task scores to preserve exact comparisons for tasks with multiple eligible steps. An optimal positive primary margin establishes unique first place, zero permits tied first place, and a negative optimum rules out first place within the measured pool for that subset size. A negative-margin optimum is not claimed to minimize the target's competition rank.
 
 Every selection is explicitly outcome-dependent and favors named configurations. Preserve full-pool and frozen-prefix rankings, all measured outcomes, each intermediate selected set, and optimizer status. Do not interpret favorable selected-set ranks as unbiased superiority on unseen tasks.
+
+## Metric correction on 2026-11-13
+
+Integer target IDs and equivalent integer-string encodings now match, for example
+`8117` and `"8117"`. This correction applies uniformly to every configuration in
+both page profiles. Target order and multiplicity, action-type sequences, dense
+eligibility, and the finished/parseable-output requirements are unchanged. XML
+and alternate target-field names are not newly accepted. Booleans and floats
+are not coerced to integer IDs. No inference outputs are modified or regenerated.
+
+`target_equal` uses the corrected comparison. `target_equal_raw` retains the old
+Python list comparison for audit. Analysis manifests identify the metric as
+`integer_target_ids_v2`. Earlier results remain historical raw-metric results,
+not estimates under the corrected rule.

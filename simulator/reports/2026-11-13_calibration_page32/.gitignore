@@ -5,6 +5,7 @@ layouts/
 control/
 inputs/records.json
 replay_orphan_checkpoints/
+analysis_before_integer_target_ids_v2/
 captures/
 *.pt
 *.safetensors

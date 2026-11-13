@@ -7,11 +7,12 @@ import shutil
 import numpy as np
 import pandas as pd
 from subset_search import optimize,TARGET,SECONDARY
+from action_metrics import METRIC_VERSION,target_indices_equal
 
 ROOT=Path(__file__).resolve().parents[1]
 SETTINGS=json.loads((ROOT/'settings.json').read_text())
 CONFIGS=[(a,b) for a in SETTINGS['anchors'] for b in SETTINGS['alphas']]
-METRICS=('target_equal','type_equal','action_equal','finished','parsed')
+METRICS=('target_equal','target_equal_raw','type_equal','action_equal','finished','parsed')
 
 
 def save(path,value):
@@ -44,9 +45,11 @@ def main():
             dense_actions=dense['actions'],dense_types=dense['types'],dense_indices=dense['indices']))
         for v in r['variants'][:-1]:
             valid=bool(v['finished'] and v['parsed']);type_match=valid and v['types']==dense['types']
-            joint=type_match and v['indices']==dense['indices']
+            joint=type_match and target_indices_equal(v['indices'],dense['indices'])
+            joint_raw=type_match and v['indices']==dense['indices']
             rows.append(dict(task=r['task'],capture=r['capture'],task_order=record['task_order'],A=v['A'],alpha=v['alpha'],
                 target_equal=float(joint) if indexed else np.nan,type_equal=float(type_match) if valid_dense else np.nan,
+                target_equal_raw=float(joint_raw) if indexed else np.nan,
                 action_equal=float(valid and v['actions']==dense['actions']) if valid_dense else np.nan,
                 finished=float(v['finished']),parsed=float(valid),measurement_source=v['measurement_source']))
     states=pd.DataFrame(rows)
@@ -82,6 +85,7 @@ def main():
     pd.DataFrame(membership,columns=['task','subset_size','selected']).to_csv(output/'subset_membership.csv',index=False)
     save(output/'subset_search.json',searches)
     status=dict(complete=len(complete)==64,completed_tasks=len(complete),completed_steps=len(metadata),
+        metric_version=METRIC_VERSION,metric_sha256=hashlib.sha256(Path(__file__).with_name('action_metrics.py').read_bytes()).hexdigest(),
         eligible_tasks=len(matrix),planned_tasks=64,planned_steps=72,settings=SETTINGS,
         task_ids=complete,replay_hashes=hashes,analyzer_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         optimizer_sha256=hashlib.sha256(Path(__file__).with_name('subset_search.py').read_bytes()).hexdigest())

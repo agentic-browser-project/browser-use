@@ -61,10 +61,11 @@ def main():
     metadata=json.loads((ROOT/'results/task_metadata.json').read_text());by_task={r['task']:r for r in metadata}
     ranks=pd.read_csv(ROOT/'results/rankings.csv');count=status['completed_tasks']
     settings=status['settings']
+    stopped=(ROOT/'stopped_by_user.json').exists()
     lines=['# Offline action calibration with 64-token pages',
         f"Protocol revision: 2026-11-12. **{count}/64 tasks completed**. "
         f"Dense indexed actions are available for **{status['dense_index_eligible_tasks']}** tasks. "
-        f"Status: {'complete' if status['complete'] else 'interim, measurement continues'}. "
+        f"Status: {'complete' if status['complete'] else 'stopped by user' if stopped else 'interim, measurement continues'}. "
         'This experiment searches for calibration examples that favor (32,0.25). Such outcome-selected subsets are exploratory, '
         'and their ranks are not unbiased evidence of general superiority.',
         '## 1. Configuration and metric',
@@ -78,6 +79,8 @@ def main():
         'share dense prefill, then generate independent states. Fixed pairs give 50 decoder rows. '
         'Earlier two-profile results are preserved separately and are excluded from this report.',
         'Joint agreement requires the complete action-type sequence and flattened target-index sequence to match the paired dense response. '
+        'Integer IDs and integer-string representations are equivalent, so 8117 and "8117" match. '
+        'The former raw comparison is retained as target_equal_raw for all configurations. '
         'Other arguments, such as typed text, can differ. Complete-action equality separately requires all parsed arguments to match. '
         'Unfinished or invalid sparse responses count as mismatches. Dense responses without a completed, parseable indexed action '
         'are excluded only from the joint metric and remain in the exports. Dense agreement does not establish action correctness.',

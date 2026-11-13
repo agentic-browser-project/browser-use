@@ -70,7 +70,9 @@ def main():
         'before any merged result is accepted. Additional old alpha=0.375 rows are numerical controls and are absent from the reported grid. '
         'The remaining 51 distinct tasks follow the previously frozen candidate order. There are 72 included states from 64 tasks. '
         'Three numerical batch partners are excluded from all task counts and rankings.',
-        'The primary metric remains the strict action-type plus target-index agreement with the paired dense response. '
+        'The primary metric compares action types and target indices with the paired dense response. '
+        'Integer IDs and their integer-string representations are equivalent, so 8117 and "8117" match. '
+        'The former raw comparison remains available as target_equal_raw. This correction applies to every configuration. '
         'It requires a finished output accepted by the existing action JSON parser. It does not normalize XML or alternative target-field names. '
         'Consequently it combines completion, format acceptance and action fidelity. It is not pure semantic element accuracy or online success. '
         'Unfinished or unparseable sparse outputs count as mismatches. Dense states without parseable indexed actions are excluded only '

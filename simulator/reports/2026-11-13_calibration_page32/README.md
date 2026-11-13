@@ -115,3 +115,21 @@ and checks all legacy full continuations again before merging each reused step.
 It stops on mismatches. Existing synthetic optimizer and aggregation checks are
 recorded under [`validation/`](validation/). They are validation fixtures, not
 measured benchmark outcomes.
+
+## Target-ID comparison correction
+
+The primary joint metric now treats integer IDs and equivalent integer strings
+as the same target. For example, `8117` matches `"8117"`. This applies to every
+configuration. The previous comparison is retained as `target_equal_raw`, while
+`target_equal` uses `integer_target_ids_v2`. Action order, output completion, and
+the action JSON parser are unchanged. See the protocol amendment for details.
+
+For all completed steps, including steps from incomplete tasks, run:
+
+```bash
+python experiments/summarize_steps.py --root /workspace/calibration_page32_20261113
+python experiments/summarize_steps.py --root /workspace/calibration_page64_20261112
+```
+
+This read-only CPU summary reports both raw and corrected rankings without any
+subset search. It also lists every outcome changed by ID normalization.
